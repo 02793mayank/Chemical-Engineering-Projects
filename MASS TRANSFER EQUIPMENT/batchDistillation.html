@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Batch Distillation Calculator</title>
+</head>
+<body>
+  <h2>Batch Distillation Calculation</h2>
+  <form id="batchForm">
+    <label>Feed (mol):</label>
+    <input type="number" step="any" id="feed" value="100"><br><br>
+
+    <label>Feed Composition (xF):</label>
+    <input type="number" step="any" id="xF" value="0.5"><br><br>
+
+    <label>Relative Volatility (α):</label>
+    <input type="number" step="any" id="alpha" value="2"><br><br>
+
+    <label>Final Residue Composition (xW):</label>
+    <input type="number" step="any" id="xW" value="0.2"><br><br>
+
+    <button type="button" onclick="calculateDistillation()">Calculate</button>
+  </form>
+
+  <h3>Results</h3>
+  <pre id="result"></pre>
+
+  <script>
+    function equilibriumY(x, alpha) {
+      return (alpha * x) / (1 + (alpha - 1) * x);
+    }
+
+    function calculateDistillation() {
+      const F = parseFloat(document.getElementById("feed").value);
+      const xF = parseFloat(document.getElementById("xF").value);
+      const alpha = parseFloat(document.getElementById("alpha").value);
+      const xW = parseFloat(document.getElementById("xW").value);
+
+      // Numerical integration of Rayleigh equation
+      let steps = 1000;
+      let dx = (xF - xW) / steps;
+      let integral = 0;
+
+      for (let i = 0; i < steps; i++) {
+        let x = xW + i * dx;
+        let y = equilibriumY(x, alpha);
+        integral += dx / (y - x);
+      }
+
+      let ln_FW = integral;
+      let W = F / Math.exp(ln_FW);
+      let D = F - W;
+
+      document.getElementById("result").textContent =
+        "Final Residue (W): " + W.toFixed(2) + " mol\n" +
+        "Distillate (D): " + D.toFixed(2) + " mol\n" +
+        "Recovery: " + ((D / F) * 100).toFixed(2) + " %";
+    }
+  </script>
+</body>
+</html>

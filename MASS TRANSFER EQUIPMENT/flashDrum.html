@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Flash Drum Calculator (pure JS)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; max-width: 900px; }
+    input, textarea, select { width: 100%; padding: 8px; margin: 6px 0 12px; box-sizing: border-box; }
+    label { font-weight: bold; display:block; margin-top:10px; }
+    .row { display:flex; gap:12px; }
+    .col { flex:1; }
+    pre { background:#f6f6f6; padding:10px; }
+  </style>
+</head>
+<body>
+  <h1>Flash Drum Calculator — JS only</h1>
+  <p>Enter feed + K-values (or provide vapor-pressure data if you want Raoult's law — this UI expects K-values for simplicity).</p>
+
+  <label>Temperature (°C)</label>
+  <input type="number" id="T" value="100">
+
+  <label>Pressure (bar)</label>
+  <input type="number" id="P" value="1">
+
+  <label>Total molar feed (kmol/hr)</label>
+  <input type="number" id="F" value="100">
+
+  <label>Component mol fractions (comma separated, must sum to 1)</label>
+  <input type="text" id="z" value="0.4,0.6">
+
+  <label>Component K-values (comma separated; one K per component)</label>
+  <input type="text" id="K" value="2.0,0.5">
+
+  <label>Mean molecular weights of components (kg/kmol, comma separated) — used for vapor density</label>
+  <input type="text" id="MW" value="46.07,92.14">
+
+  <label>Souders–Brown constant k (m/s)</label>
+  <input type="number" id="kSB" value="0.20">
+
+  <label>Liquid density (kg/m³)</label>
+  <input type="number" id="rhoL" value="800">
+
+  <label>Liquid residence time (min)</label>
+  <input type="number" id="tres" value="5">
+
+  <label>Liquid pool height (m)</label>
+  <input type="number" id="hL" value="1.0">
+
+  <button id="calc">Run calculation</button>
+
+  <h2>Results</h2>
+  <pre id="out">No results yet.</pre>
+
+<script>
+/* Helper numeric functions */
+function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
+function linspace(a,b,n){ let s=[]; for(let i=0;i<n;i++) s.push(a + (b-a)*i/(n-1)); return s; }
+
+/* Rachford-Rice solver (bisection) for beta in [0,1] */
+function rachfordRiceBeta(z, K, tol=1e-9, maxIter=200){
+  const f = (beta) => {
+    let s = 0;
+    for(let i=0;i<z.length;i++){
+      s += z[i]*(K[i]-1)/(1 + beta*(K[i]-1));
+    }
+    return s;
+  };
+  let fa = f(0), fb = f(0.999999999);
+  if(Math.abs(fa) < tol) return 0;
+  if(Math.abs(fb) < tol) return 0.999999999;
+  // check signs - if same sign, there may be trivial solution (all vap or all liq)
+  if(fa*fb > 0){
+    // Try to detect trivial cases
+    // If sum z*(K-1) > 0 then vapor fraction -> 1 else -> 0
+    let s0 = 0; for(let i=0;i<z.length;i++) s0 += z[i]*(K[i]-1);
+    return (s0 > 0) ? 0.9999999 : 0.0;
+  }
+  let a=0, b=0.999999999, mid;
+  for(let it=0; it<maxIter; it++){
+    mid = 0.5*(a+b);
+    let fm = f(mid);
+    if(Math.abs(fm) < tol) return mid;
+    if(fm*fa > 0){ a = mid; fa = fm; } else { b = mid; fb = fm; }
+  }
+  return mid;
+}
+
+/* Main calc invoked by button */
+document.getElementById("calc").addEventListener("click", () => {
+  try {
+    const T = Number(document.getElementById("T").value) + 273.15; // K
+    const P = Number(document.getElementById("P").value) * 1e5; // Pa
+    const F = Number(document.getElementById("F").value); // kmol/hr
+    const z = document.getElementById("z").value.split(",").map(s=>Number(s.trim()));
+    const K = document.getElementById("K").value.split(",").map(s=>Number(s.trim()));
+    const Mw = document.getElementById("MW").value.split(",").map(s=>Number(s.trim()));
+    const kSB = Number(document.getElementById("kSB").value);
+    const rhoL = Number(document.getElementById("rhoL").value);
+    const tres_min = Number(document.getElementById("tres").value);
+    const hL = Number(document.getElementById("hL").value);
+
+    if(z.length !== K.length || z.length !== Mw.length) throw "Component arrays must have same length.";
+
+    // 1) Solve Rachford-Rice for beta
+    const beta = rachfordRiceBeta(z, K);
+    const nV_kmol_hr = beta * F;
+    const nL_kmol_hr = (1-beta) * F;
+
+    // compositions
+    const x = z.map((zi, i) => zi / (1 + beta*(K[i]-1)));
+    const y = x.map((xi,i) => K[i]*xi);
+
+    // 2) Vapor volumetric flow (ideal gas)
+    // Mean molecular weight of vapor (kg/kmol)
+    let y_mol = y.slice();
+    let MW_vap = 0;
+    let ym_sum = sum(y_mol);
+    if(ym_sum === 0) { // avoid divide by zero
+      for(let i=0;i<y_mol.length;i++) y_mol[i] = 0;
+    } else {
+      // normalize y (rounding)
+      y_mol = y_mol.map(v=>v/ym_sum);
+    }
+    for(let i=0;i<Mw.length;i++) MW_vap += (y_mol[i]||0) * Mw[i];
+    if(MW_vap === 0) MW_vap = sum(Mw)/Mw.length;
+
+    // Convert flows to mol/s
+    const nV_mol_s = nV_kmol_hr * 1000 / 3600;
+    const nL_mol_s = nL_kmol_hr * 1000 / 3600;
+
+    // Ideal gas: Vdot = n * R * T / P (R = 8.314 m3·Pa/(kmol·K)? careful)
+    // Using R = 8.314 (m3·Pa)/(kmol·K)
+    const R = 8.31446261815324;
+    const Vdot_v_m3_s = nV_mol_s * R * T / P;
+
+    // vapor density
+    const rhoV = P * (MW_vap/1000) / (R * T); // MW in kg/kmol -> kg/mol? careful: MW/1000 to kg/mol. but R uses kmol; this formula yields kg/m3
+    // Simpler:  rhoV = (P * MW_vap) / (R * T)  with R in Pa·m3/(kmol·K) and MW in kg/kmol -> kg/m3
+    // (the above does MW_vap in kg/kmol -> correct)
+
+    // 3) Souders-Brown sizing
+    const vs_max = kSB * Math.sqrt( (rhoL - rhoV)/rhoV );
+    const A_req = Vdot_v_m3_s / vs_max;
+    const D_vapor = Math.sqrt(4*A_req/Math.PI);
+
+    // 4) Liquid hold-up (residence time)
+    const VdotL_m3_s = nL_mol_s * (sum(Mw.map((m,i)=> (x[i]||0)*Mw[i]))/1000) / rhoL; // approx: molar->mass->vol
+    // simpler: approximate liquid volumetric flow from molar flow * avg molar volume? We'll approximate using mean MW
+    // Construct a reasonable average liquid MW (using liquid mole fractions x)
+    let MW_liq = 0;
+    let x_sum = sum(x);
+    let xnorm = (x_sum===0) ? x.map(_=>1/x.length) : x.map(v=>v/x_sum);
+    for(let i=0;i<Mw.length;i++) MW_liq += xnorm[i]*Mw[i];
+    const m_dot_L_kg_s = nL_mol_s * (MW_liq/1000);
+    const VdotL_approx_m3_s = m_dot_L_kg_s / rhoL;
+
+    const V_L_required = VdotL_approx_m3_s * (tres_min*60);
+    const A_for_liq = V_L_required / hL;
+    const D_liquid = Math.sqrt(4*A_for_liq/Math.PI);
+
+    // Choose final diameter controlled by larger of vapor & liquid
+    const D_final = Math.max(D_vapor, D_liquid);
+
+    // Heights
+    const h_inlet = 0.25;
+    const h_disengage = Math.max(0.6, 1.5 * Math.sqrt(D_final)); // heuristic
+    const headspace = 0.3;
+    const total_height = h_inlet + hL + h_disengage + headspace;
+
+    // Build output
+    const out = {
+      inputs: { T_K: T, P_Pa: P, F_kmol_hr: F, z, K, MW: Mw },
+      solution: {
+        vapor_fraction_beta: beta,
+        vapor_flow_kmol_hr: nV_kmol_hr,
+        liquid_flow_kmol_hr: nL_kmol_hr,
+        liquid_mole_frac_x: x,
+        vapor_mole_frac_y: y,
+        nV_mol_s: nV_mol_s,
+        Vdot_v_m3_s: Vdot_v_m3_s.toExponential(6),
+        rhoV_kg_m3: rhoV.toFixed(4),
+        vs_max_m_s: vs_max.toFixed(4),
+        area_required_m2_vapor: A_req.toFixed(6),
+        D_vapor_m: D_vapor.toFixed(4),
+        VdotL_m3_s_approx: VdotL_approx_m3_s.toExponential(6),
+        V_L_required_m3: V_L_required.toFixed(6),
+        area_required_m2_liquid: A_for_liq.toFixed(6),
+        D_liquid_m: D_liquid.toFixed(4),
+        chosen_diameter_m: D_final.toFixed(4),
+        liquid_pool_height_m: hL,
+        vapor_disengagement_height_m: h_disengage.toFixed(3),
+        estimated_total_height_m: total_height.toFixed(3)
+      }
+    };
+
+    document.getElementById("out").innerText = JSON.stringify(out, null, 2);
+
+  } catch (err) {
+    document.getElementById("out").innerText = "Error: " + String(err);
+  }
+});
+</script>
+</body>
+</html>
