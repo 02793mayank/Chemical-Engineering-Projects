@@ -2,6 +2,19 @@
 document.querySelector("form").addEventListener("submit", function(e) {
   e.preventDefault();
 
+  //header buttons functions
+  function downloadPDF() {
+      // Path to your PDF in GitHub repo (adjust username/repo/path)
+      const pdfUrl = "https://raw.githubusercontent.com/02793mayank/Chemical-Engineering-Projects/main/HEAT%20EXCHANGER/docs/Heat_Exchanger_Calculations.pdf";
+
+      // Create a hidden <a> tag
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.download = "Heat_Exchanger_Calculations.pdf"; // Suggested filename
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   // Get form values
   let mHot = parseFloat(document.getElementById("mHot").value) || 0; // kg/hr
   let TinHot = parseFloat(document.getElementById("TinHot").value) || 0;
