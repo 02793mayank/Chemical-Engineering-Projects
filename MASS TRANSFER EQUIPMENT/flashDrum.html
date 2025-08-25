@@ -1,56 +1,104 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Flash Drum Calculator (pure JS)</title>
+  <meta charset="UTF-8">
+  <title>Flash Drum Calculator</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; max-width: 900px; }
-    input, textarea, select { width: 100%; padding: 8px; margin: 6px 0 12px; box-sizing: border-box; }
-    label { font-weight: bold; display:block; margin-top:10px; }
-    .row { display:flex; gap:12px; }
-    .col { flex:1; }
-    pre { background:#f6f6f6; padding:10px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url("image.png") no-repeat center center fixed;
+      background-size: cover;
+      color: #333;
+    }
+    header {
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    section {
+      background: rgba(255,255,255,0.95);
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 900px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #023e8a;
+    }
+    label {
+      font-weight: bold;
+      display:block;
+      margin-top:10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 6px 0 12px;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin: 10px 0;
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #0077b6;
+      color: white;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover { background: #023e8a; }
+    .result-box {
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
-  <h1>Flash Drum Calculator — JS only</h1>
-  <p>Enter feed + K-values (or provide vapor-pressure data if you want Raoult's law — this UI expects K-values for simplicity).</p>
+  <header>
+    <h1>Flash Drum Calculator</h1>
+  </header>
 
-  <label>Temperature (°C)</label>
-  <input type="number" id="T" value="100">
+  <section>
+    <h2>Input Data</h2>
+    <label>Temperature (°C)</label>
+    <input type="number" id="T" value="100">
+    <label>Pressure (bar)</label>
+    <input type="number" id="P" value="1">
+    <label>Total molar feed (kmol/hr)</label>
+    <input type="number" id="F" value="100">
+    <label>Component mol fractions (comma separated)</label>
+    <input type="text" id="z" value="0.4,0.6">
+    <label>Component K-values (comma separated)</label>
+    <input type="text" id="K" value="2.0,0.5">
+    <label>Mean molecular weights (kg/kmol, comma separated)</label>
+    <input type="text" id="MW" value="46.07,92.14">
+    <label>Souders–Brown constant k (m/s)</label>
+    <input type="number" id="kSB" value="0.20">
+    <label>Liquid density (kg/m³)</label>
+    <input type="number" id="rhoL" value="800">
+    <label>Liquid residence time (min)</label>
+    <input type="number" id="tres" value="5">
+    <label>Liquid pool height (m)</label>
+    <input type="number" id="hL" value="1.0">
+    <button id="calc">Run Calculation</button>
+  </section>
 
-  <label>Pressure (bar)</label>
-  <input type="number" id="P" value="1">
-
-  <label>Total molar feed (kmol/hr)</label>
-  <input type="number" id="F" value="100">
-
-  <label>Component mol fractions (comma separated, must sum to 1)</label>
-  <input type="text" id="z" value="0.4,0.6">
-
-  <label>Component K-values (comma separated; one K per component)</label>
-  <input type="text" id="K" value="2.0,0.5">
-
-  <label>Mean molecular weights of components (kg/kmol, comma separated) — used for vapor density</label>
-  <input type="text" id="MW" value="46.07,92.14">
-
-  <label>Souders–Brown constant k (m/s)</label>
-  <input type="number" id="kSB" value="0.20">
-
-  <label>Liquid density (kg/m³)</label>
-  <input type="number" id="rhoL" value="800">
-
-  <label>Liquid residence time (min)</label>
-  <input type="number" id="tres" value="5">
-
-  <label>Liquid pool height (m)</label>
-  <input type="number" id="hL" value="1.0">
-
-  <button id="calc">Run calculation</button>
-
-  <h2>Results</h2>
-  <pre id="out">No results yet.</pre>
-
+  <section>
+    <h2>Results</h2>
+    <div class="result-box" id="out">No results yet.</div>
+  </section>
 <script>
 /* Helper numeric functions */
 function sum(arr){ return arr.reduce((a,b)=>a+b,0); }

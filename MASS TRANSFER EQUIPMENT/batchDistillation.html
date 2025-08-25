@@ -1,51 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Batch Distillation Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url("image.png") no-repeat center center fixed;
+      background-size: cover;
+      color: #333;
+    }
+    header {
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    section {
+      background: rgba(255,255,255,0.95);
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 900px;
+    }
+    h2 { color: #023e8a; margin-top: 0; }
+    label { font-weight: bold; display:block; margin-top:10px; }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 6px 0 12px;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin: 10px 0;
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #0077b6;
+      color: white;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover { background: #023e8a; }
+    .result-box {
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  </style>
 </head>
 <body>
-  <h2>Batch Distillation Calculation</h2>
-  <form id="batchForm">
-    <label>Feed (mol):</label>
-    <input type="number" step="any" id="feed" value="100"><br><br>
+  <header>
+    <h1>Batch Distillation Calculator</h1>
+  </header>
 
-    <label>Feed Composition (xF):</label>
-    <input type="number" step="any" id="xF" value="0.5"><br><br>
+  <section>
+    <h2>Input Data</h2>
+    <form id="batchForm">
+      <label>Feed (mol):</label>
+      <input type="number" step="any" id="feed" value="100">
+      <label>Feed Composition (xF):</label>
+      <input type="number" step="any" id="xF" value="0.5">
+      <label>Relative Volatility (α):</label>
+      <input type="number" step="any" id="alpha" value="2">
+      <label>Final Residue Composition (xW):</label>
+      <input type="number" step="any" id="xW" value="0.2">
+      <button type="button" onclick="calculateDistillation()">Calculate</button>
+    </form>
+  </section>
 
-    <label>Relative Volatility (α):</label>
-    <input type="number" step="any" id="alpha" value="2"><br><br>
-
-    <label>Final Residue Composition (xW):</label>
-    <input type="number" step="any" id="xW" value="0.2"><br><br>
-
-    <button type="button" onclick="calculateDistillation()">Calculate</button>
-  </form>
-
-  <h3>Results</h3>
-  <pre id="result"></pre>
+  <section>
+    <h2>Results</h2>
+    <div class="result-box" id="result">No results yet.</div>
+  </section>
 
   <script>
     function equilibriumY(x, alpha) {
       return (alpha * x) / (1 + (alpha - 1) * x);
     }
-
     function calculateDistillation() {
       const F = parseFloat(document.getElementById("feed").value);
       const xF = parseFloat(document.getElementById("xF").value);
       const alpha = parseFloat(document.getElementById("alpha").value);
       const xW = parseFloat(document.getElementById("xW").value);
 
-      // Numerical integration of Rayleigh equation
-      let steps = 1000;
-      let dx = (xF - xW) / steps;
-      let integral = 0;
-
+      let steps = 1000, dx = (xF - xW) / steps, integral = 0;
       for (let i = 0; i < steps; i++) {
         let x = xW + i * dx;
         let y = equilibriumY(x, alpha);
         integral += dx / (y - x);
       }
-
       let ln_FW = integral;
       let W = F / Math.exp(ln_FW);
       let D = F - W;
