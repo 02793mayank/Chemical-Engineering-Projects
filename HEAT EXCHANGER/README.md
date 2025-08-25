@@ -34,4 +34,4 @@ This project is a web-based application that provides a structured interface to 
                                         ![Form Screenshot](assets/form.png)
 
                                            ### 3. Calculation Results Page
-                                       ![Results Screenshot](assets/results.png)
+                                       ![Results Screenshot](assets/result.png)
