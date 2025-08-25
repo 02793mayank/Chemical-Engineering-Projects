@@ -31,7 +31,7 @@ This project is a web-based application that provides a structured interface to 
 //                        try not delete any file from the folder it may cause errors 
 
                                           ### 2. Filled Heat Exchanger Form
-                                        ![Form Screenshot](https://raw.githubusercontent.com/02793mayank/Chemical-Engineering-Projects/main/HEAT%20EXCHANGER/assets/form.png)
+                                        ![Form Screenshot](https://github.com/02793mayank/Chemical-Engineering-Projects/blob/main/HEAT%20EXCHANGER/assets/exchanger.png)
 
                                            ### 3. Calculation Results Page
                                        ![Results Screenshot](./assets/result.png)
