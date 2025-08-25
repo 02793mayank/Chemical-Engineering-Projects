@@ -1,28 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Heat Exchanger Calculations</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header>
-    <h1>Heat Exchanger Calculations</h1>
-    <nav>
-      <button id="Home" onclick="window.location.href='index.html'">Exchanger</button>
-    </nav>
-  </header>
-
-  <section>
-    <h2>Step-by-Step Calculations</h2>
-    <p><b>1. Heat Duty (Q):</b> ( Q = m. Cp . Delta T )</p>
-    <p><b>2. LMTD:</b> ( Delta T_m ={Delta T_1 - Delta T_2}{ln(Delta T_1 / Delta T_2)} )</p>
-    <p><b>3. Area (A):</b> ( A = Q/U (Delta T_m))</p>
-  </section>
-
-  <section>
-    <h2>MATLAB Code</h2>
-    <pre><code class="matlab">
 %% HEAT EXCHANGER CALCULATIONS
 % Configurations: 1-1, 1-2, 2-4
 clear; clc;
@@ -109,7 +84,3 @@ disp(['Area required = ', num2str(A3), ' m²']);
 disp(['Number of tubes = ', num2str(Ntube3)]);
 disp(['Re_h = ', num2str(Re_h3), ', Re_c = ', num2str(Re_c3)]);
 
-    </code></pre>
-  </section>
-</body>
-</html>
