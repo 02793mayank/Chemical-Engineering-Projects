@@ -5,7 +5,7 @@ Undergraduate, IIT (ISM) Dhanbad
 Chemical Engineering | Process Design Enthusiast
 
                                             ### 1. Heat Exchanger 
-                                  ![Form Screenshot](assets/exchanger.png)
+                                  ![Form Screenshot](./assets/exchanger.png)
 
 This project is a web-based application that provides a structured interface to document, configure, and analyze a Shell & Tube Heat Exchanger.
 
@@ -31,7 +31,7 @@ This project is a web-based application that provides a structured interface to 
 //                        try not delete any file from the folder it may cause errors 
 
                                           ### 2. Filled Heat Exchanger Form
-                                        ![Form Screenshot](assets/form.png)
+                                        ![Form Screenshot](./assets/form.png)
 
                                            ### 3. Calculation Results Page
-                                       ![Results Screenshot](assets/result.png)
+                                       ![Results Screenshot](./assets/result.png)
